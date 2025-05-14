@@ -1,4 +1,5 @@
 import {
+  check,
   openSettings,
   PERMISSIONS,
   request,
@@ -37,4 +38,22 @@ export const requestLocationPermission =
 
 export const checkLocationPermission = async (): Promise<PermissionStatus> => {
   let status: RNPermissionStatus = 'unavailable';
+
+  if (Platform.OS === 'ios') {
+    status = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+  } else if (Platform.OS === 'android') {
+    status = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+  } else {
+    throw new Error('Platform not supported');
+  }
+
+  const permissionMapper: Record<RNPermissionStatus, PermissionStatus> = {
+    granted: 'granted',
+    denied: 'denied',
+    blocked: 'blocked',
+    unavailable: 'unavailable',
+    limited: 'limited',
+  };
+
+  return permissionMapper[status] ?? 'unavailable';
 };
