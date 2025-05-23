@@ -36,5 +36,6 @@ export const watchCurrentLocation = (
   );
 };
 
-export const clearWatchLocation = (watchId: number) =>
+export const clearWatchLocation = (watchId: number) => {
   Geolocation.clearWatch(watchId);
+};

@@ -18,7 +18,7 @@
 
       <meta-data
       android:name="com.google.android.geo.API_KEY"
-      android:value="AIzaSyA0lJ6Pwd1hdQd5kzKmDLsLRAnJVmMCdYY"/>
+      android:value="aqui va la api key de google cloud platform"/>
 
       <activity
         android:name=".MainActivity"

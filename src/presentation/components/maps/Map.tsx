@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {PermissionsAndroid, Platform} from 'react-native';
-import MapView, {Marker, PROVIDER_GOOGLE} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
+import MapView, {Marker, Polyline, PROVIDER_GOOGLE} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import {Location} from '../../../infrastructure/interfaces/location';
 import {FAB} from '../ui/FAB';
 import {useLocationStore} from '../../store/location/useLocationStore';
@@ -12,11 +13,21 @@ interface Props {
   showUserLocation?: boolean;
 }
 export const Map = ({initialLocation, showUserLocation = true}: Props) => {
-  const {getLocation} = useLocationStore();
+  const {
+    getLocation,
+    lastKnownLocation,
+    watchLocation,
+    clearWatchLocation,
+    userLocationsList,
+  } = useLocationStore();
 
   const mapRef = useRef<MapView>(null);
 
   const cameraLocation = useRef<Location>(initialLocation);
+
+  const [isFollowingUser, setIsFollowingUser] = useState(true);
+
+  const [isShowingPolyline, setIsShowingPolyline] = useState(true);
 
   const moveCameraToLocation = (location: Location) => {
     if (!mapRef.current) {
@@ -36,19 +47,19 @@ export const Map = ({initialLocation, showUserLocation = true}: Props) => {
     moveCameraToLocation(location);
   };
 
-  // const getLocationAsync = async () => {
-  //   await PermissionsAndroid.request(
-  //     PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-  //   );
+  useEffect(() => {
+    watchLocation();
 
-  //   await PermissionsAndroid.request(
-  //     PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-  //   );
+    return () => {
+      clearWatchLocation();
+    };
+  }, []);
 
-  //   await PermissionsAndroid.request(
-  //     PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
-  //   );
-  // };
+  useEffect(() => {
+    if (lastKnownLocation && isFollowingUser) {
+      moveCameraToLocation(lastKnownLocation);
+    }
+  }, [lastKnownLocation, isFollowingUser]);
 
   return (
     <>
@@ -67,7 +78,8 @@ export const Map = ({initialLocation, showUserLocation = true}: Props) => {
           longitude: cameraLocation.current.longitude,
           latitudeDelta: 0.015,
           longitudeDelta: 0.0121,
-        }}>
+        }}
+        onTouchStart={() => setIsFollowingUser(false)}>
         {/* <Marker
           coordinate={{
             latitude: 37.78825,
@@ -78,7 +90,24 @@ export const Map = ({initialLocation, showUserLocation = true}: Props) => {
           draggable
           image={require('../../../assets/marker.png')}
         /> */}
+        {isShowingPolyline && (
+          <Polyline
+            coordinates={userLocationsList}
+            strokeColor="black"
+            strokeWidth={5}
+          />
+        )}
       </MapView>
+      <FAB
+        iconName={isShowingPolyline ? 'eye-outline' : 'eye-off-outline'}
+        onPress={() => setIsShowingPolyline(!isShowingPolyline)}
+        style={{right: 20, bottom: 140}}
+      />
+      <FAB
+        iconName={isFollowingUser ? 'walk-outline' : 'accessibility-outline'}
+        onPress={() => setIsFollowingUser(!isFollowingUser)}
+        style={{right: 20, bottom: 80}}
+      />
       <FAB
         iconName="compass-outline"
         onPress={moveToCurrentLocation}
